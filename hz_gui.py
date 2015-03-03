@@ -1,48 +1,260 @@
+# -*- coding: windows-1250 -*-
+
 from tkinter import *
 from bs4 import BeautifulSoup
 import urllib.request
 
 
 
-'''
-select towns and get train scheudle
 
-use lists
+def replace(str):
+    
+    rep={'È':'%C8', 'Æ':'%C6', 'Ž':'%8E', 'Š':'%8A', 'Ð':'%D0',}
+    if str!=None:
+        for i,j in rep.items():
+            str=str.replace(i, j)
+    return str
+    
 
-and then GO button
-'''
+
+#stgripping and substituting None type of data if needed
+def stripped(data,sub=''):
+    if data==None:
+        data=sub
+    else:
+        data=data.strip()
+        
+    return data
+
+
+#get trains that are leaving from destination, check are they late and thie final destination (if applicable)
+def get_data_for_departing(depa,dest,d_or_a):
+    des=dest
+    dep=depa
+    da=d_or_a
+    if da=='D':
+        t='TRAIN ID - DEPARTURE TIME - LATE - SRRIVING FROM \n'
+    else:
+        t='TRAIN ID - ARRIVAL TIME - LATE - DESTINATION \n'
+    url='http://vred.hzinfra.hr/hzinfo/Default.asp?KO='+dep+'&Category=hzinfo&Service=PANO&LANG=HR&OD1='+da+'&SCREEN=2'
+    all_trains=[]
+    all_trains_return=[]
+    all_trains_return.append(t)
+    print(url)
+    
+    try:
+        response=urllib.request.urlopen(url)
+        html=response.read()
+        b=BeautifulSoup(html)
+        b=b.find_all('tr')
+        
+        print(t)
+        
+        
+        all_trains.append(t)
+        for i in b:
+            x=i.find_all('td')
+            train_id=x[0].a.string.strip()
+            arrival=x[1].string.strip()
+            late=stripped(x[2].string,'On Time')
+            from_town=stripped(x[6].string)
+            all_trains.append(train_id+' - '+arrival+' - '+late+' - '+from_town+'\n')
+            
+            print(train_id+' - '+arrival+' - '+late+' - '+from_town)
+    except urllib.error.HTTPError:
+        print('404 - page not found')
+        all_trains.append('No trains found')
+        
+    
+    if des!=None:
+        for i in all_trains:
+            if des in str(i):
+                all_trains_return.append(i)
+    else:
+        all_trains_return=all_trains
+    print(all_trains_return)
+
+       
+    return all_trains_return
 
 
 class MainFrame(Frame):
     def __init__(self,parent):
         Frame.__init__(self, parent)
         self.parent=parent
-        self.countrynames = ('Argentina', 'Australia', 'Belgium', 'Brazil', 'Canada', 'China', 'Denmark', \
-        'Finland', 'France', 'Greece', 'India', 'Italy', 'Japan', 'Mexico', 'Netherlands', 'Norway', 'Spain', \
-        'Sweden', 'Switzerland')
+        self.countrynames = ('ZAGREB GL. KOL.', 'ANDRIJAŠEVCI', 'ANDRIJEVCI', 'ANTUNOVAC', 'BADLJEVINA', 'BAKOVIÆI', 
+'BANOVA JARUGA', 'BANJA', 'BEDEKOVÈINA', 'BELAVIÆI', 'BELI MANASTIR', 'BENKOVAC', 'BIBINJE', 'BIJELA', 'BIJELO BRDO', 
+'BIZOVAC', 'BJELOVAR', 'BLACKO JAKŠIÆ', 'BLATA', 'BLINJSKI KUT', 'BOROVO-TRPINJA', 'BORUT', 'BOTOVO', 'BOŽJAKOVINA', 
+'BRDAŠCE', 'BRDOVEC', 'BRÐANI KRAJIŠKI', 'BREGI', 'BREZINE BUJAVICA', 'BREZOVLJANI', 'BRGUD', 'BRIJEST', 
+'BRLOG GRAD', 'BROD MORAVICE', 'BRODSKI STUPNIK', 'BRŠADIN', 'BRŠADIN LIPOVAÈA', 'BUBNJARCI', 'BUÈJE-KOPRIVNICA', 
+'BUDINŠÆINA', 'BUDROVCI', 'BULIÆ', 'BUZET', 'CABUNA', 'CAREVDAR', 'CERA', 'CERJE TUŽNO', 'CERNA', 'CEROVLJANI', 
+'CEROVLJE', 'CIGLENIK', 'CIRKVENA', 'CRET', 'ÈABRUNIÆI', 'ÈABRUNIÆI SELO', 'ÈAÈINCI', 'ÈAGLIN', 'ÈAKOVEC', 
+'ÈAKOVEC-BUZOVEC', 'ÈEHOVEC', 'ÈEMINAC', 'ÈEPIN', 'ÈUKOVEC', 'ÈULINEC', 'DABAR', 'DALMATIN. OSTROVICA', 'DALJ', 'DARDA', 
+'DARUVAR', 'DEANOVEC', 'DEBELJAK', 'DELNICE', 'DESINEC', 'DOBROVAC', 'DOLIÆE', 'DOMAGOVIÆ', 'DONJA STUBICA', 
+'DONJA VRBA', 'DONJA VRIJESKA', 'DONJE DUBRAVE', 'DONJI DOLAC', 'DONJI KRALJEVEC', 'DONJI LIPOVEC', 
+'DONJI MIHALJEVEC', 'DOPSIN', 'DRAGALIÆ', 'DRAGANIÆI', 'DRAGOVCI', 'DRENOVCI', 'DRIVENIK', 'DRNIŠ', 'DRNJE', 
+'DUBRAVA ZABOÈKA', 'DUGA RESA', 'DUGO SELO', 'DUKOVEC', 'DUNJKOVEC', 'ÐAKOVO', 'ÐEVRSKE', 'ÐULOVAC', 
+'ÐURÐENOVAC', 'ÐURÐEVAC', 'ÐURMANEC', 'ERDUT', 'ERNESTINOVO', 'FERIÈANCI', 'FRIGIS', 'FUŽINE', 
+'GABOS', 'GAJNICE', 'GALIŽANA', 'GALOVCI', 'GARÈIN', 'GENERALSKI STOL', 'GOLUBOVEC', 'GOMIRJE', 
+'GORNJA STUBICA', 'GORNJE DUBRAVE', 'GORNJI ZVEÈAJ', 'GOSPIÆ', 'GRABOŠTANI', 'GRAÈAC', 'GRADEC', 
+'GRADIŠTE', 'GREDA', 'GRGINAC', 'GRGINAC NOVI', 'GUNJA', 'HARMICA', 'HEKI', 'HEKI TOVARIŠTE', 
+'HORVATI', 'HRASTOVAC', 'HRASTOVAC-VUÈKI', 'HRAŠÆINA-TRGOVIŠÆE', 'HROMEC', 'HRSOVO', 'HRVATSKA DUBICA', 
+'HRVATSKA KOSTAJNICA', 'HRVATSKI LESKOVAC', 'HUM LUG', 'HUM U ISTRI', 'ILAÈA', 'ILOVA', 'IVANEC', 'IVANIÆ GRAD', 
+'IVANKOVO', 'IVOŠEVCI', 'JALŽABET', 'JASENOVAC', 'JASTREBARSKO', 'JELISAVAC', 'JOSIPDOL', 'JOSIPOVAC', 
+'JURDANI', 'JURŠIÆI', 'JUŠIÆI', 'KALDRMA', 'KALINOVAC', 'KAMANJE', 'KANFANAR', 'KARLOVAC', 'KARLOVAC-CENTAR', 
+'KAŠTEL GOMILICA', 'KAŠTEL KAMBELOVAC', 'KAŠTEL STARI', 'KAŠTEL SUÆURAC', 'KISTANJE', 'KLOKOÈEVAC', 'KLOŠTAR', 
+'KNEŽCI', 'KNIN', 'KOMIN', 'KONJŠÆINA', 'KOPANICA-BERAVCI', 'KOPRIVNICA', 'KOPRNO', 'KORENIÈANI', 'KOSOVO', 
+'KOŠARE', 'KOŠKA', 'KOTORIBA', 'KOŽLOVAC', 'KRAJCAR BRIJEG', 'KRAPINA', 'KRIŽEVCI', 'KRNJEVO', 'KRUŠLJEVEC', 
+'KRVAVAC', 'KUKAÈA', 'KUKUNJEVAC', 'KULA NORINSKA', 'KULJEVÈICA', 'KUNOVEC SUBOTICA', 'KUPJAK', 'KUPLJENOVO', 
+'KUSTOŠIJA', 'KUTI', 'KUTINA', 'LABIN DALMATINSKI', 'LADUÈ', 'LASLOVO-KORODJ', 'LATIN', 'LATINOVAC', 'LAZINA', 
+'LEKENIK', 'LEPAVINA', 'LEPOGLAVA', 'LEPURI', 'LIÈ', 'LIÈKA JESENICA', 'LIÈKI PODHUM', 'LIÈKO LEŠÆE', 'LIPIK', 
+'LIPOVAC-KORITNA', 'LIPOVLJANI', 'LOKVE', 'LONDŽICA', 'LOVINAC', 'LUDBREG', 'LUDINA', 'LUKA', 'LUPOGLAV', 
+'LUŽANI-MALINO', 'LJESKOVICA', 'LJUBOŠINA', 'MACINEC', 'MAÐAREVO', 'MAHIÈNO', 'MAJUR', 'MAJUREC', 'MAKSIMIR', 
+'MALA SUBOTICA', 'MANDALINA', 'MARKUSICA-ANTIN', 'MARTIJANEC', 'MASLENJAÈA', 'MAVRAÈIÆI', 'MEDAK', 'MEÐURIÆ', 
+'MEJA', 'MELNICE', 'METKOVIÆ', 'MIHALJEVCI', 'MIKLEUŠ', 'MIRKOVCI', 'MIŠULINOVAC', 'MORAVICE', 'MOSLAVAÈKA GRAÈENICA', 
+'MRACLIN', 'MRZLO POLJE', 'MUÈNA REKA', 'MURSKO SREDIŠÆE', 'NADIN', 'NAŠICE', 'NAŠICE GRAD', 'NAŠIÈKA BREZNICA', 
+'NIZA', 'NORMANCI', 'NOVA BUKOVICA', 'NOVA GRADIŠKA', 'NOVA KAPELA-BATRINA', 'NOVAKI', 'NOVAKOVEC', 'NOVI DALJ', 
+'NOVI DVORI', 'NOVI MAROF', 'NOVIGRAD PODRAVSKI', 'NOVO SELO ROK', 'NOVOSELCI', 'NOVOSELEC', 'NOVSKA', 'NUGLA', 
+'NUŠTAR STAJALIŠTE', 'OÆESTOVO', 'ODRA', 'OGULIN', 'OGULINSKI HRELJIN', 'OKUÈANI', 'OPATIJA-MATULJI', 'OPUZEN', 
+'ORIOVAC', 'OROLIK', 'OROSLAVJE', 'OSIJEK', 'OSIJEK DONJI GRAD', 'OSIJEK DRAVSKI MOST', 'OSIJEK LUKA', 'OSIJEK OLT', 
+'OSTRNA', 'OSTROVO', 'OŠTARIJE', 'OŠTARIJE RAVNICE', 'OTOK', 'OZALJ', 'PAKRAC', 'PAKRAC GRAD', 'PAPIÆI', 'PAULOVAC', 
+'PAZIN', 'PÈELIÆ', 'PEPELANA', 'PERKOVCI', 'PERKOVIÆ', 'PERMANI', 'PERUŠIÆ', 'PEŠÆENICA', 'PETROVE GORE', 'PITOMAÈA', 
+'PIVNICA', 'PLANJANE', 'PLASE', 'PLAŠKI', 'PLAVÈA DRAGA', 'PLAVNO', 'PLETERNICA', 'PLOÈE', 'PODRAVSKA BISTRICA', 
+'PODRUTE', 'PODSUSED STAJALIŠTE', 'PODSUSED TVORNICA', 'POJATNO', 'POLJANA', 'POLJANKA', 'POPOVAÈA', 'POTOÈANI-KATINAC', 
+'POZNANOVEC', 'POŽEGA', 'PREÈEC STAJALIŠTE', 'PRESLO', 'PRGOMET', 'PRIMORSKI DOLAC', 'PRIMORSKI SV. JURAJ', 
+'PRIMORSKO VRPOLJE', 'PRIVLAKA', 'PRISTAV-KRAPINSKI-ST', 'PRKOS', 'PULA', 'RADUÈIÆ', 'RAJIÆ', 'RASINJA', 'RAŠTEVIÆ', 
+'RATKOVICA', 'RAŽINE', 'REMETINEC', 'REPINEC', 'REPUŠNICA', 'RIJEKA', 'RIPIŠTE', 'ROÈ', 'ROÈKO POLJE', 'ROGOTIN', 'ROKOVCI', 
+'ROVIŠÆE', 'RUDOPOLJE', 'RUKAVAC', 'SADINE', 'SAMATOVCI', 'SARVAŠ', 'SAVIÈENTA', 'SAVSKI MAROF', 'SEDRAMIÆ', 'SEMELJCI', 
+'SESVETE', 'SESVETSKI KRALJEVEC', 'SIBINJ', 'SIKIREVCI', 'SIRAÈ', 'SIROVA KATALENA', 'SISAK', 'SISAK CAPRAG', 'SIVERIÆ', 
+'SKRAD', 'SLADOJEVCI', 'SLAKOVCI', 'SLATINA', 'SLAVONSKI BROD', 'SLAVONSKI ŠAMAC', 'SLOBODNICA', 'SMOLJANCI', 'SOKOLOVAC', 
+'SOLIN', 'SPAÈVA', 'SPLIT', 'SPLIT PREDGRAÐE', 'SREMSKE LAZE', 'STABLINA', 'STANDARD', 'STARA SUBOCKA', 'STARE PLAVNICE', 
+'STARI MIKANOVCI', 'STARI SLATINIK', 'STARO PETROVO SELO', 'STARO TOPOLJE', 'STAZA', 'STAŽNJEVEC', 'STRIZIVOJNA VRPOLJE', 
+'STUBIÈKE TOPLICE', 'STUPNO', 'SUHOPOLJE', 'SUKOŠAN', 'SULKOVCI', 'SUNJA', 'SUŠAK PEÆINE', 'SUTLA', 'SV. IVAN ŽABNO', 
+'SV. KRIŽ ZAÈRETJE', 'SVETI ILIJA', 'SVETI PETAR U ŠUMI', 'ŠAPJANE', 'ŠAŠ', 'ŠIBENIK', 'ŠIDSKI BANOVCI', 'ŠIJANA', 
+'ŠIRINEC', 'ŠKABRNJE', 'ŠKODINOVAC', 'ŠKRINJARI', 'ŠKRLJEVO', 'ŠOPOT', 'ŠPIÈKOVINA', 'ŠPIŠIÆ BUKOVICA', 'ŠTRUCLJEVO', 
+'ŠUŠNJEVO SELO', 'TENJSKI-ANTUNOVAC', 'TEPLJUH', 'TOUNJ', 'TOVARNIK', 'TRENKOVO', 'TRNAVA', 'TURÈIN', 'TUROPOLJE', 
+'UNEŠIÆ', 'VARAŽDIN', 'VELIKA', 'VELIKA GORICA', 'VELIKA VES', 'VELIKO TRGOVIŠÆE', 'VELIKO TROJSTVO', 'VELIMIROVAC', 
+'VIDOVEC', 'VINKOVAÈKI BANOVCI', 'VINKOVAÈKO NOVO SELO', 'VINKOVCI', 'VINKOVCI BOLNICA', 'VIRJE', 'VIROVITICA', 
+'VIROVITICA GRAD', 'VIŠKOVCI', 'VIŠNJEVAC', 'VIŠNJEVAC IPK', 'VIŠNJICA', 'VLADISLAVCI', 'VODNJAN', 'VODNJAN STAJALIŠTE', 
+'VODOVOD', 'VOÐINCI', 'VOJAKOVAÈKI KLOŠTAR', 'VOJNOVAC', 'VOLINJA', 'VOLODER', 'VRAPÈE', 'VRATA', 'VRATIŠINEC', 
+'VRBANJA', 'VRBOVA', 'VRBOVEC', 'VRBOVSKO', 'VRHOVINE', 'VUJASINOVIÆI', 'VUKOSAVLJEVICA', 'VUKOVAR', 'VUKOVAR-BOROVO NAS.', 
+'VUKOVJE', 'ZABOK', 'ZADAR', 'ZADUBRAVLJE', 'ZAGREB GL. KOL.', 'ZAGREB KLARA', 'ZAGREB ZAP. KOL.', 'ZALESINA', 
+'ZALUKA', 'ZAPOLJE', 'ZAPREŠIÆ', 'ZAPREŠIÆ-SAVSKA', 'ZARILAC', 'ZBELAVA', 'ZDENCI-ORAHOVICA', 'ZDENÈINA', 
+'ZLATAR-BISTRICA', 'ZLOBIN', 'ZOLJAN', 'ZORKOVAC', 'ZRMANJA', 'ZVEÈAJ', 'ŽABJAK', 'ŽEINCI', 'ŽITNIÆ', 'ŽIVAJA', 
+'ŽMINJ', 'ŽRNOVAC', 'ŽUPANJA', 'ŽUTNICA')
+        
         self.cnames = StringVar(value=self.countrynames)
         
-        
-        #scroll1
-        
-        #listbox2
-        #scroll2
-        
-        #button
-        
-        #text
+        self.countrynames2 = ('Argentina', 'Australia', 'Belgium', 'Brazil', 'Canada', 'China', 'Denmark', \
+        'Finland', 'France', 'Greece', 'India', 'Italy', 'Japan', 'Mexico', 'Netherlands', 'Norway', 'Spain', \
+        'Sweden', 'Switzerland', 'Argentina', 'Australia', 'Belgium', 'Brazil', 'Canada', 'China', 'Denmark', \
+        'Finland', 'France', 'Greece', 'India', 'Italy', 'Japan', 'Mexico', 'Netherlands', 'Norway', 'Spain', \
+        'Sweden', 'Switzerland')
+        self.cnames2 = StringVar(value=self.countrynames)
         
         self.GUI()
     
 
     def GUI(self):
-        self.departureBox=Listbox(self,height=25,selectmode=SINGLE,listvariable=self.cnames)
-        self.departureBox.grid(row=0,column=0)
+        
+        #first frame with first listbox and scrollbar
+        self.departureFrame=Frame(self,bg='red')
+        self.departureFrame.grid(row=0,column=0)
+        self.departureLabel=Label(self.departureFrame,text='FROM:')
+        self.departureLabel.grid(row=0,column=0)
+        self.departureBox=Listbox(self.departureFrame,height=25,selectmode=SINGLE,listvariable=self.cnames,exportselection=0)
+        self.departureBox.grid(row=1,column=0)
+        self.departureScroll=Scrollbar(self.departureFrame)
+        self.departureScroll.grid(row=1,column=5,sticky='ns')
+        self.departureScroll.config(command=self.departureBox.yview)
+        
+        self.departureBox.config(yscrollcommand=self.departureScroll.set)
+               
+               
+        #second frame with second listbox and scrollbar      
+        self.arrivalFrame=Frame(self,bg='blue')
+        self.arrivalFrame.grid(row=0,column=6)
+        self.arrivalLabel=Label(self.arrivalFrame,text='TO:')
+        self.arrivalLabel.grid(row=0,column=6)
+        self.arrivalBox=Listbox(self.arrivalFrame,height=25,selectmode=SINGLE,listvariable=self.cnames2,exportselection=0)
+        self.arrivalBox.grid(row=1,column=6)
+        self.arrivalScroll=Scrollbar(self.arrivalFrame)
+        self.arrivalScroll.grid(row=1,column=10,sticky='ns')
+        self.arrivalScroll.config(command=self.arrivalBox.yview)
+        
+        self.arrivalBox.config(yscrollcommand=self.arrivalScroll.set)
+        
+        #third frame with buttons
+        self.buttonFrame=Frame(self,bg='green')
+        self.buttonFrame.grid(row=0,column=15)
+        self.arrivalButton=Button(self.buttonFrame,text='Get time of arriving trains \nand their destination')
+        self.arrivalButton.grid(row=0,column=16)
+        self.arrivalButton.config(command=lambda:self.GetData('D'))
+        self.departureButton=Button(self.buttonFrame,text='Get times of departing Trains \nand their destinations')
+        self.departureButton.config(command=lambda:self.GetData('O'))
+        self.departureButton.grid(row=1,column=16)
+
+
+        #fourth frame with label and text
+        self.textFrame=Frame(self)
+        self.textFrame.grid(row=0,column=20)
+        
+        self.textLabel=Label(self.textFrame,text='where and when')
+        self.textLabel.grid(row=0,column=21)
+        
+        self.textBox=Text(self.textFrame)
+        self.textBox.config(width=50)
+        self.textBox.grid(row=1,column=21)
+        
+        #text
     
     
-    def GetData(self,departure,destination):
+    def GetDestinations(self):
         pass
     
+    
+    def GetData(self,d):
+
+        self.d_or_a=d
+        #d_or_a decides do we want to se departing trains or trains that are arriving
+        
+        
+        self.textBox.delete('1.0', END)
+        
+        try: 
+            #selected departure 
+            self.curDeparInd=self.departureBox.curselection()[0]
+            self.curDepar=self.departureBox.get(self.curDeparInd)
+            
+            self.textBox.insert(END,self.curDepar+'\n') 
+        except IndexError:
+            self.textBox.insert(END,'departure not selected')   
+            self.curDepar=None
+            
+            
+        
+        
+        try:    
+            self.curArrInd=self.arrivalBox.curselection()[0]
+            self.curArr=self.arrivalBox.get(self.curArrInd)      
+            #self.textBox.delete('1.0', END)
+            self.textBox.insert(END, self.curArr+'\n')
+        except IndexError:    
+            #self.textBox.delete('1.0', END)
+            self.textBox.insert(END, 'Arrival not selected \n')
+            self.curArr=None
+            
+        except IndexError:
+            #self.textBox.delete('1.0', END)
+            self.textBox.insert(END, 'Did you selected both trains?')
+
+        
+     
+        dta=get_data_for_departing(replace(self.curDepar), replace(self.curArr),self.d_or_a)
+
+        for i in dta:
+            self.textBox.insert(END, i)
+        
 
 def main(): 
     root=Tk()
